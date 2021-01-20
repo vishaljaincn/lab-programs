@@ -1,0 +1,109 @@
+Activity_main.xml
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+ xmlns:tools="http://schemas.android.com/tools"
+ android:layout_width="match_parent"
+ android:layout_height="match_parent"
+ android:orientation="vertical"
+ android:gravity="center">
+ <TextView
+ android:layout_width="wrap_content"
+ android:layout_height="wrap_content"
+ android:text="Sender Number"
+ android:paddingBottom="50px"
+ android:id="@+id/lbl_number"/>
+
+ <TextView
+ android:layout_width="wrap_content"
+ android:layout_height="wrap_content"
+ android:text="Message content"
+ android:id="@+id/lbl_message"/>
+
+</LinearLayout>
+MainActivity.java
+package com.example.p5;
+import android.os.Bundle;
+import android.app.Activity;
+import android.view.Menu;
+import android.widget.TextView;
+public class MainActivity extends Activity {
+TextView lblnumber,lblmessage;
+ @Override
+ protected void onCreate(Bundle savedInstanceState) {
+ super.onCreate(savedInstanceState);
+ setContentView(R.layout.activity_main);
+ lblnumber=(TextView)findViewById(R.id.lbl_number);
+ lblmessage=(TextView)findViewById(R.id.lbl_message);
+ Bundle b= getIntent().getBundleExtra("data");
+
+ if(b!=null)
+ {
+ String number=b.getString("number");
+ String content=b.getString("content");
+
+ lblnumber.setText(number);
+ lblmessage.setText(content);
+ }
+ }
+ @Override
+ public boolean onCreateOptionsMenu(Menu menu) {
+ // Inflate the menu; this adds items to the action bar if it is present.
+ getMenuInflater().inflate(R.menu.main, menu);
+ return true;
+ }
+}
+MySmsReceiver.java
+package com.example.p5;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.telephony.SmsMessage;
+public class MySmsReceiver extends BroadcastReceiver{
+@Override
+public void onReceive(Context arg0, Intent arg1) {
+// TODO Auto-generated method stub
+Object[] objmessages=(Object[])arg1.getExtras().get("pdus");
+for(int i=0; i<objmessages.length;i++)
+{
+SmsMessage m=SmsMessage.createFromPdu((byte[])objmessages[i]);
+Bundle b1=new Bundle();
+b1.putString("number", m.getOriginatingAddress());
+b1.putString("content", m.getMessageBody());
+Intent it=new Intent(arg0, MainActivity.class);
+it.putExtra("data", b1);
+it.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+arg0.startActivity(it);
+break;
+}
+}
+}
+AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+ package="com.example.p5"
+ android:versionCode="1"
+ android:versionName="1.0" >
+ <uses-sdk
+ android:minSdkVersion="8"
+ android:targetSdkVersion="18" />
+ <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+ <application
+ android:allowBackup="true"
+ android:icon="@drawable/ic_launcher"
+ android:label="@string/app_name"
+ android:theme="@style/AppTheme" >
+ <activity
+ android:name="com.example.p5.MainActivity"
+ android:label="@string/app_name" >
+ <intent-filter>
+ <action android:name="android.intent.action.MAIN" />
+ <category android:name="android.intent.category.LAUNCHER" />
+ </intent-filter>
+ </activity>
+ <receiver android:name="com.example.p5.MySmsReceiver">
+ <intent-filter>
+ <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
+ </intent-filter>
+ </receiver>
+ </application>
+</manifest>
